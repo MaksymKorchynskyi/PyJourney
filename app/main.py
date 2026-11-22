@@ -3,7 +3,7 @@ import models
 from models import Topics
 from database import engine, SessionLocal
 from typing import Annotated
-from routes import topics, notes
+from routes import topics, notes, auth
 
 app = FastAPI()
 
@@ -11,4 +11,5 @@ models.Base.metadata.create_all(bind=engine)
 
 app.include_router(topics.router)
 app.include_router(notes.router)
+app.include_router(auth.router)
 
