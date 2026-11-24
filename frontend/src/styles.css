@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Satoshi", "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-blue: #2d5ddc;
+  --color-blue-600: #2450c4;
+  --color-orange: #ff5734;
+  --color-orange-600: #f04a26;
+  --color-ink: #151313;
+  --color-mist: #e3e6e9;
+  --color-lime: #c4f03b;
+  --color-lime-600: #b4e02a;
+  --color-canvas: #eef0f2;
+  --color-surface: #fafafa;
+  --color-panel: #eff0f2;
+  --color-muted: #6b6f75;
+
+  --radius-card: 1.75rem;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-rise: rise 0.5s var(--ease-out-soft) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100dvh;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue;
+  }
+
+  code,
+  pre,
+  kbd {
+    font-variant-ligatures: none;
+  }
+
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  ::selection {
+    @apply bg-lime text-ink;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none;
+    transition: none;
+    scroll-behavior: auto;
+  }
+}
