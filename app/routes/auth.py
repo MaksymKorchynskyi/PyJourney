@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, Query, Depends
-from schemas.user import CreateUserRequest, Token
+from schemas.user import CreateUserRequest, Token, UserResponse
 from models import Users
-from security import hash_password, verify_password, create_acces_token
+from security import hash_password, verify_password, create_acces_token, user_dependency
 from database import db_dependency
 from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
@@ -42,7 +42,11 @@ async def login_for_acces_token(form_data: Annotated[OAuth2PasswordRequestForm, 
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user.')
     
     token = create_acces_token(user.id)
-    return {"acces_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer"}
+
+@router.get("/me", status_code=status.HTTP_200_OK, response_model=UserResponse)
+async def read_current_user(user: user_dependency):
+    return user
 
 
 

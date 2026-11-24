@@ -5,6 +5,7 @@ from starlette import status
 from schemas.topics import TopicRequest, TopicResponse
 from schemas.notes import NoteResponse
 from models import Notes
+from security import admin_dependency
 
 router = APIRouter(prefix="/topics", tags=["topics"])
 
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/topics", tags=["topics"])
 async def read_all_topics(db: db_dependency, skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)):
     return db.query(Topics).order_by(Topics.id).offset(skip).limit(limit).all()
 
-@router.get("/topics/{topics_id}", status_code=status.HTTP_200_OK, response_model=list[TopicResponse])
+@router.get("/topics/{topics_id}", status_code=status.HTTP_200_OK, response_model=TopicResponse)
 async def read_topic(db: db_dependency, topics_id: int = Path(gt=0)):
     topics_model = db.query(Topics).filter(Topics.id == topics_id).first()
     if topics_model is not None:
@@ -26,15 +27,17 @@ async def read_topic_notes(db: db_dependency, topic_id: int, skip: int = Query(0
         raise HTTPException(status_code=404, details="Topic not found.")
     return (db.query(Notes).filter(Topics.id == topic_id).order_by(Notes.id).offset(skip).limit(limit).all())
 
-@router.post("/topics", status_code= status.HTTP_201_CREATED, response_model=list[TopicResponse])
-async def create_topic(db : db_dependency, topic_request: TopicRequest):
+@router.post("/topics", status_code= status.HTTP_201_CREATED, response_model=TopicResponse)
+async def create_topic(db : db_dependency, admin: admin_dependency, topic_request: TopicRequest):
     topics_model = Topics(**topic_request.model_dump())
 
     db.add(topics_model)
     db.commit()
+    db.refresh(topics_model)
+    return topics_model
 
-@router.put("/topics/{topics_id}", status_code=status.HTTP_200_OK, response_model=list[TopicResponse])
-async def update_topic(db: db_dependency, topic_request: TopicRequest, topics_id: int = Path(gt=0)):
+@router.put("/topics/{topics_id}", status_code=status.HTTP_200_OK, response_model=TopicResponse)
+async def update_topic(db: db_dependency, admin: admin_dependency, topic_request: TopicRequest, topics_id: int = Path(gt=0)):
     topics_model = db.query(Topics).filter(Topics.id == topics_id).first()
     if topics_model is None:
         raise HTTPException(status_code=404, detail="Topic not found. ")
@@ -48,7 +51,7 @@ async def update_topic(db: db_dependency, topic_request: TopicRequest, topics_id
     return topics_model
 
 @router.delete("/topics/{topics_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_topic(db: db_dependency, topics_id: int = Path(gt=0)):
+async def delete_topic(db: db_dependency, admin: admin_dependency, topics_id: int = Path(gt=0)):
     topics_model = db.query(Topics).filter(Topics.id == topics_id).first()
     if topics_model is None:
         raise HTTPException(status_code=404, detail="Topic not found. ")
