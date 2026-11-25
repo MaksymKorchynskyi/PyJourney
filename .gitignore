@@ -235,3 +235,6 @@ venv/
 
 # Local files
 *.log
+
+# Frontend sources: the Python "lib/" rule above would hide them
+!frontend/src/lib/
