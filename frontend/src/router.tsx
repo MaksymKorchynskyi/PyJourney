@@ -11,8 +11,9 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { NotFound, PageError, PageSkeleton } from "@/components/layout/fallbacks";
 import { AuthLayout } from "@/features/auth/auth-layout";
+import { ApiError } from "@/lib/api";
 import type { Auth } from "@/lib/auth";
-import { myNotesQuery, roleQuery, topicsQuery } from "@/lib/queries";
+import { categoriesQuery, myNotesQuery, roleQuery, topicQuery, topicsQuery } from "@/lib/queries";
 import { FILTERS } from "@/lib/topic";
 import { HomePage, type HomeSearch } from "@/routes/home";
 import { LoginPage, type LoginSearch } from "@/routes/login";
@@ -29,6 +30,24 @@ const text = (value: unknown) =>
     : typeof value === "number"
       ? String(value)
       : undefined;
+
+const loadCatalog = (queryClient: QueryClient) =>
+  Promise.all([
+    queryClient.ensureQueryData(topicsQuery),
+    queryClient.ensureQueryData(categoriesQuery),
+    queryClient.ensureQueryData(myNotesQuery),
+  ]);
+
+async function loadTopic(queryClient: QueryClient, topicId: string) {
+  const id = Number(topicId);
+  if (!Number.isInteger(id) || id <= 0) throw notFound();
+  try {
+    return await queryClient.ensureQueryData(topicQuery(id));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) throw notFound();
+    throw error;
+  }
+}
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
@@ -75,11 +94,7 @@ const homeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/",
   validateSearch: (search): HomeSearch => ({ q: text(search.q) }),
-  loader: ({ context: { queryClient } }) =>
-    Promise.all([
-      queryClient.ensureQueryData(topicsQuery),
-      queryClient.ensureQueryData(myNotesQuery),
-    ]),
+  loader: ({ context: { queryClient } }) => loadCatalog(queryClient),
   component: HomePage,
 });
 
@@ -88,13 +103,10 @@ const topicsRoute = createRoute({
   path: "topics",
   validateSearch: (search): TopicsSearch => ({
     q: text(search.q),
-    show: FILTERS.find((filter) => filter.id === search.show)?.id,
+    show: FILTERS.find((filter) => filter === search.show),
+    category: text(search.category),
   }),
-  loader: ({ context: { queryClient } }) =>
-    Promise.all([
-      queryClient.ensureQueryData(topicsQuery),
-      queryClient.ensureQueryData(myNotesQuery),
-    ]),
+  loader: ({ context: { queryClient } }) => loadCatalog(queryClient),
   component: TopicsPage,
 });
 
@@ -107,7 +119,7 @@ const newTopicRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "topics/new",
   beforeLoad: requireAdmin,
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(topicsQuery),
+  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(categoriesQuery),
   component: lazyRouteComponent(() => import("@/routes/topic-editor"), "NewTopicPage"),
 });
 
@@ -115,23 +127,19 @@ const editTopicRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "topics/$topicId/edit",
   beforeLoad: requireAdmin,
-  loader: async ({ context: { queryClient }, params }) => {
-    const topics = await queryClient.ensureQueryData(topicsQuery);
-    if (!topics.some((topic) => String(topic.id) === params.topicId)) throw notFound();
-  },
+  loader: ({ context: { queryClient }, params }) =>
+    Promise.all([
+      queryClient.ensureQueryData(categoriesQuery),
+      loadTopic(queryClient, params.topicId),
+    ]),
   component: lazyRouteComponent(() => import("@/routes/topic-editor"), "EditTopicPage"),
 });
 
 const topicRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "topics/$topicId",
-  loader: async ({ context: { queryClient }, params }) => {
-    const [topics] = await Promise.all([
-      queryClient.ensureQueryData(topicsQuery),
-      queryClient.ensureQueryData(myNotesQuery),
-    ]);
-    if (!topics.some((topic) => String(topic.id) === params.topicId)) throw notFound();
-  },
+  loader: ({ context: { queryClient }, params }) =>
+    Promise.all([loadCatalog(queryClient), loadTopic(queryClient, params.topicId)]),
   component: lazyRouteComponent(() => import("@/routes/topic"), "TopicPage"),
 });
 
@@ -139,11 +147,7 @@ const savedRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "saved",
   validateSearch: (search): SavedSearch => ({ q: text(search.q) }),
-  loader: ({ context: { queryClient } }) =>
-    Promise.all([
-      queryClient.ensureQueryData(topicsQuery),
-      queryClient.ensureQueryData(myNotesQuery),
-    ]),
+  loader: ({ context: { queryClient } }) => loadCatalog(queryClient),
   component: SavedPage,
 });
 
@@ -151,11 +155,7 @@ const notesRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "notes",
   validateSearch: (search): NotesSearch => ({ q: text(search.q) }),
-  loader: ({ context: { queryClient } }) =>
-    Promise.all([
-      queryClient.ensureQueryData(topicsQuery),
-      queryClient.ensureQueryData(myNotesQuery),
-    ]),
+  loader: ({ context: { queryClient } }) => loadCatalog(queryClient),
   component: lazyRouteComponent(() => import("@/routes/notes"), "NotesPage"),
 });
 
