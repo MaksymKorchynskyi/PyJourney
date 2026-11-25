@@ -5,9 +5,10 @@ import { NotesTable } from "@/features/notes/notes-table";
 import { TopicCard } from "@/features/topics/topic-card";
 import { UpNextCard } from "@/features/topics/up-next-card";
 import { useBookmarks } from "@/lib/bookmarks";
-import { myNotesQuery, topicsQuery } from "@/lib/queries";
+import { useT } from "@/lib/i18n";
+import { categoriesQuery, myNotesQuery, topicsQuery } from "@/lib/queries";
 import { useReadingProgress, useVisits } from "@/lib/reading-progress";
-import { statusOf, toneAt } from "@/lib/topic";
+import { categoryOf, matchesTopic, statusOf, toneAt } from "@/lib/topic";
 
 const route = getRouteApi("/app/");
 
@@ -45,7 +46,9 @@ const latest = (...dates: (string | undefined)[]) =>
 
 export function HomePage() {
   const { q = "" } = route.useSearch();
+  const t = useT();
   const { data: topics } = useSuspenseQuery(topicsQuery);
+  const { data: categories } = useSuspenseQuery(categoriesQuery);
   const { data: notes } = useSuspenseQuery(myNotesQuery);
   const bookmarks = useBookmarks();
   const progress = useReadingProgress();
@@ -56,12 +59,14 @@ export function HomePage() {
   const matches = (text: string) => !needle || text.toLowerCase().includes(needle);
 
   const notesByTopic = Map.groupBy(notes, (note) => note.topic_id);
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
   const entries = topics.map((topic, index) => {
     const read = progress[topic.id] ?? 0;
     const topicNotes = notesByTopic.get(topic.id) ?? [];
     const lastNote = latest(...topicNotes.map((note) => note.updated_at));
     return {
       topic,
+      category: categoryOf(topic, categoryById),
       index,
       read,
       count: topicNotes.length,
@@ -84,7 +89,7 @@ export function HomePage() {
     entries.find((entry) => entry.status !== "completed" && entry !== current);
 
   const searched = (entry: (typeof entries)[number]) =>
-    matches(entry.topic.title) || matches(entry.topic.content);
+    matchesTopic(entry.topic, entry.category, needle);
   const recent = studied.filter(searched).slice(0, SHELF_SIZE);
   const suggestions = shuffled(
     entries.filter((entry) => !entry.lastActivity && entry !== upNext && searched(entry)),
@@ -100,19 +105,20 @@ export function HomePage() {
   return (
     <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-[2.75rem] leading-none font-medium tracking-tight">Python topics</h1>
+        <h1 className="text-[2.75rem] leading-none font-medium tracking-tight">{t.home.title}</h1>
         <Link to="/topics" className="shrink-0 text-xl text-orange hover:underline">
-          View all topics
+          {t.home.viewAll}
         </Link>
       </div>
 
-      <section aria-label="Recent and suggested topics">
+      <section aria-label={t.home.shelf}>
         {shelf.length ? (
           <div className="scrollbar-none -mx-4 grid snap-x snap-mandatory auto-cols-[minmax(19rem,1fr)] grid-flow-col gap-3 overflow-x-auto scroll-px-4 px-4 sm:mx-0 sm:scroll-px-0 sm:px-0 md:auto-cols-[calc((100%-0.75rem)/2)] xl:auto-cols-[calc((100%-1.5rem)/3)]">
-            {shelf.map(({ topic, index, read, count, lastActivity }, position) => (
+            {shelf.map(({ topic, category, index, read, count, lastActivity }, position) => (
               <TopicCard
                 key={topic.id}
                 topic={topic}
+                category={category}
                 index={index}
                 tone={toneAt(position)}
                 progress={read}
@@ -124,9 +130,7 @@ export function HomePage() {
           </div>
         ) : (
           <p className="grid min-h-48 place-items-center rounded-card bg-panel p-8 text-center text-xl text-muted">
-            {topics.length
-              ? "Nothing matches your search."
-              : "Topics are on their way. Check back soon."}
+            {topics.length ? t.home.nothingMatches : t.home.comingSoon}
           </p>
         )}
       </section>
@@ -138,21 +142,19 @@ export function HomePage() {
         >
           <div className="mb-6 flex items-center justify-between gap-4 px-6 lg:px-7">
             <h2 id="recent-notes" className="text-2xl font-medium tracking-tight sm:text-[1.85rem]">
-              My recent notes
+              {t.home.recentNotes}
             </h2>
             <Link to="/notes" className="shrink-0 text-lg text-orange hover:underline sm:text-xl">
-              View all notes
+              {t.home.viewAllNotes}
             </Link>
           </div>
           {recentNotes.length ? (
             <NotesTable notes={recentNotes} topics={topics} />
           ) : (
-            <p className="px-7 pb-6 text-lg text-muted">
-              No notes yet. Open a topic and write down what you learn.
-            </p>
+            <p className="px-7 pb-6 text-lg text-muted">{t.home.noNotes}</p>
           )}
         </section>
-        <UpNextCard topic={upNext?.topic} index={upNext?.index ?? 0} />
+        <UpNextCard topic={upNext?.topic} category={upNext?.category} index={upNext?.index ?? 0} />
       </div>
     </div>
   );
