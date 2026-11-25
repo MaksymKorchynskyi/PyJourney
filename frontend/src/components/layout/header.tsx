@@ -2,10 +2,13 @@ import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { Bell, Search } from "lucide-react";
 import { useState } from "react";
 import { Dropdown } from "@/components/ui/dropdown";
+import { LanguageSwitch } from "@/components/ui/language-switch";
 import { Logo } from "@/components/ui/logo";
 import { ProfileMenu } from "@/features/profile/profile-menu";
+import { useT } from "@/lib/i18n";
 
 function SearchBox() {
+  const t = useT();
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const current = useSearch({ strict: false, select: (search) => search.q ?? "" });
@@ -42,19 +45,19 @@ function SearchBox() {
             setDraft(event.target.value);
             if (pathname === target) apply(event.target.value, true);
           }}
-          placeholder="Search"
+          placeholder={t.header.search}
           aria-label={
             target === "/notes"
-              ? "Search notes"
+              ? t.header.searchNotes
               : target === "/saved"
-                ? "Search saved topics"
-                : "Search topics"
+                ? t.header.searchSaved
+                : t.header.searchTopics
           }
           className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
         />
         <button
           type="submit"
-          aria-label="Search"
+          aria-label={t.header.search}
           className="grid size-11 cursor-pointer place-items-center rounded-full bg-orange text-white shadow-md shadow-orange/30 transition-transform hover:scale-105"
         >
           <Search className="size-5" strokeWidth={2.4} />
@@ -65,17 +68,18 @@ function SearchBox() {
 }
 
 function Notifications() {
+  const t = useT();
   return (
     <Dropdown
-      label="Notifications"
+      label={t.header.notifications}
       button={<Bell className="size-6" strokeWidth={1.6} />}
       buttonClassName="grid size-12 place-items-center rounded-full bg-panel transition-colors hover:bg-mist aria-expanded:bg-mist"
       panelClassName="w-72 rounded-3xl bg-white p-5 shadow-xl shadow-ink/10"
     >
       {() => (
         <>
-          <p className="font-medium">Notifications</p>
-          <p className="mt-1 text-muted">You're all caught up.</p>
+          <p className="font-medium">{t.header.notifications}</p>
+          <p className="mt-1 text-muted">{t.header.caughtUp}</p>
         </>
       )}
     </Dropdown>
@@ -87,7 +91,8 @@ export function Header() {
     <header className="flex flex-wrap items-center gap-x-6 gap-y-4">
       <Logo />
       <SearchBox />
-      <div className="ml-auto flex items-center gap-4 md:ml-0">
+      <div className="ml-auto flex items-center gap-3 md:ml-0 sm:gap-4">
+        <LanguageSwitch />
         <Notifications />
         <ProfileMenu />
       </div>

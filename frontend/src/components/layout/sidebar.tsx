@@ -11,33 +11,35 @@ import {
   NotebookPen,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
+import type { Messages } from "@/lib/messages";
 import { useIsAdmin } from "@/lib/queries";
 
 type NavItem = {
   to: "/" | "/topics" | "/saved" | "/notes" | "/topics/new";
-  label: string;
+  label: keyof Messages["nav"];
   icon: LucideIcon;
   matches: (pathname: string) => boolean;
 };
 
 const NAV: NavItem[] = [
-  { to: "/", label: "Home", icon: LayoutGrid, matches: (path) => path === "/" },
+  { to: "/", label: "home", icon: LayoutGrid, matches: (path) => path === "/" },
   {
     to: "/topics",
-    label: "All topics",
+    label: "topics",
     icon: FolderClosed,
     matches: (path) =>
       path === "/topics" || (path.startsWith("/topics/") && path !== "/topics/new"),
   },
   {
     to: "/saved",
-    label: "Saved",
+    label: "saved",
     icon: Bookmark,
     matches: (path) => path.startsWith("/saved"),
   },
   {
     to: "/notes",
-    label: "My notes",
+    label: "notes",
     icon: NotebookPen,
     matches: (path) => path.startsWith("/notes"),
   },
@@ -46,7 +48,7 @@ const NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   {
     to: "/topics/new",
-    label: "New topic",
+    label: "newTopic",
     icon: FilePlus2,
     matches: (path) => path === "/topics/new",
   },
@@ -64,6 +66,7 @@ function Tooltip({ children }: { children: string }) {
 }
 
 export function Sidebar() {
+  const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isAdmin = useIsAdmin();
@@ -78,7 +81,7 @@ export function Sidebar() {
 
   return (
     <nav
-      aria-label="Main"
+      aria-label={t.nav.label}
       className="fixed inset-x-3 bottom-3 z-30 flex items-center justify-around rounded-3xl bg-white/90 p-2 shadow-lg shadow-ink/5 backdrop-blur lg:sticky lg:top-0 lg:inset-x-auto lg:bottom-auto lg:h-dvh lg:w-[116px] lg:flex-col lg:justify-start lg:gap-3 lg:rounded-none lg:bg-transparent lg:px-0 lg:py-28 lg:shadow-none lg:backdrop-blur-none"
     >
       {items.map(({ to, label, icon: Icon, matches }) => {
@@ -87,7 +90,7 @@ export function Sidebar() {
           <Link
             key={to}
             to={to}
-            aria-label={label}
+            aria-label={t.nav[label]}
             aria-current={active ? "page" : undefined}
             activeOptions={{ exact: true, includeSearch: false }}
             className={clsx(
@@ -98,18 +101,18 @@ export function Sidebar() {
             )}
           >
             <Icon />
-            <Tooltip>{label}</Tooltip>
+            <Tooltip>{t.nav[label]}</Tooltip>
           </Link>
         );
       })}
       <button
         type="button"
         onClick={signOut}
-        aria-label="Sign out"
+        aria-label={t.nav.signOut}
         className={clsx(itemClass, "cursor-pointer text-ink hover:bg-white lg:mt-auto")}
       >
         <LogOut />
-        <Tooltip>Sign out</Tooltip>
+        <Tooltip>{t.nav.signOut}</Tooltip>
       </button>
     </nav>
   );

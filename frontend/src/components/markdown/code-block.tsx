@@ -1,5 +1,6 @@
 import { Check, Copy } from "lucide-react";
 import { Suspense, use, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { highlight, languageOf } from "./highlighter";
 
 function Highlighted({ code, lang }: { code: string; lang: string }) {
@@ -8,6 +9,7 @@ function Highlighted({ code, lang }: { code: string; lang: string }) {
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
   return (
     <button
       type="button"
@@ -19,7 +21,7 @@ function CopyButton({ text }: { text: string }) {
       className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted transition-colors hover:bg-mist hover:text-ink"
     >
       {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-      <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
+      <span aria-live="polite">{copied ? t.code.copied : t.code.copy}</span>
     </button>
   );
 }

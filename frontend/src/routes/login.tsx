@@ -2,6 +2,7 @@ import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
 import { type SubmitEvent, useState, useTransition } from "react";
 import { Button, ErrorNote, Field } from "@/components/ui/primitives";
 import { auth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { login } from "@/lib/queries";
 
 const route = getRouteApi("/public/login");
@@ -11,6 +12,7 @@ export type LoginSearch = { redirect?: string };
 export function LoginPage() {
   const { redirect } = route.useSearch();
   const router = useRouter();
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -29,7 +31,7 @@ export function LoginPage() {
         setError(
           cause instanceof Error && !cause.message.startsWith("Could not")
             ? cause.message
-            : "Wrong username or password.",
+            : t.login.wrong,
         );
       }
     });
@@ -37,12 +39,18 @@ export function LoginPage() {
 
   return (
     <>
-      <h1 className="text-5xl font-medium tracking-tight">Welcome back</h1>
-      <p className="mt-3 text-xl text-muted">Sign in to continue your Python journey.</p>
+      <h1 className="text-5xl font-medium tracking-tight">{t.login.title}</h1>
+      <p className="mt-3 text-xl text-muted">{t.login.subtitle}</p>
       <form onSubmit={onSubmit} className="mt-10 grid gap-5">
-        <Field label="Username" name="username" autoComplete="username" required autoFocus />
         <Field
-          label="Password"
+          label={t.login.username}
+          name="username"
+          autoComplete="username"
+          required
+          autoFocus
+        />
+        <Field
+          label={t.login.password}
           name="password"
           type="password"
           autoComplete="current-password"
@@ -50,13 +58,13 @@ export function LoginPage() {
         />
         {error && <ErrorNote>{error}</ErrorNote>}
         <Button type="submit" disabled={pending} className="mt-2">
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? t.login.submitting : t.login.submit}
         </Button>
       </form>
       <p className="mt-8 text-lg text-muted">
-        New to PyJourney?{" "}
+        {t.login.newHere}{" "}
         <Link to="/register" search={{ redirect }} className="text-orange hover:underline">
-          Create an account
+          {t.login.register}
         </Link>
       </p>
     </>

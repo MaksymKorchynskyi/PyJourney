@@ -2,10 +2,12 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { type SubmitEvent, useState, useTransition } from "react";
 import { Button, ErrorNote, Field } from "@/components/ui/primitives";
 import { auth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { login, register } from "@/lib/queries";
 
 export function RegisterPage() {
   const router = useRouter();
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -27,31 +29,36 @@ export function RegisterPage() {
         await router.invalidate();
         await router.navigate({ to: "/" });
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Registration failed.");
+        setError(cause instanceof Error ? cause.message : t.register.failed);
       }
     });
   };
 
   return (
     <>
-      <h1 className="text-5xl font-medium tracking-tight">Create account</h1>
-      <p className="mt-3 text-xl text-muted">Start learning Python in under a minute.</p>
+      <h1 className="text-5xl font-medium tracking-tight">{t.register.title}</h1>
+      <p className="mt-3 text-xl text-muted">{t.register.subtitle}</p>
       <form onSubmit={onSubmit} className="mt-10 grid gap-5">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="First name" name="first_name" autoComplete="given-name" required />
-          <Field label="Last name" name="last_name" autoComplete="family-name" required />
+          <Field
+            label={t.register.firstName}
+            name="first_name"
+            autoComplete="given-name"
+            required
+          />
+          <Field label={t.register.lastName} name="last_name" autoComplete="family-name" required />
         </div>
         <Field
-          label="Username"
+          label={t.register.username}
           name="username"
           autoComplete="username"
           required
           minLength={3}
           maxLength={50}
         />
-        <Field label="Email" name="email" type="email" autoComplete="email" required />
+        <Field label={t.register.email} name="email" type="email" autoComplete="email" required />
         <Field
-          label="Password"
+          label={t.register.password}
           name="password"
           type="password"
           autoComplete="new-password"
@@ -60,13 +67,13 @@ export function RegisterPage() {
         />
         {error && <ErrorNote>{error}</ErrorNote>}
         <Button type="submit" disabled={pending} className="mt-2">
-          {pending ? "Creating account…" : "Create account"}
+          {pending ? t.register.submitting : t.register.submit}
         </Button>
       </form>
       <p className="mt-8 text-lg text-muted">
-        Already have an account?{" "}
+        {t.register.haveAccount}{" "}
         <Link to="/login" className="text-orange hover:underline">
-          Sign in
+          {t.register.signIn}
         </Link>
       </p>
     </>

@@ -6,9 +6,11 @@ import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Dropdown } from "@/components/ui/dropdown";
 import { auth, useSession } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { useIsAdmin, useMe } from "@/lib/queries";
 
 function RoleBadge({ admin, size = "sm" }: { admin: boolean; size?: "sm" | "md" }) {
+  const t = useT();
   return (
     <span
       className={clsx(
@@ -17,7 +19,7 @@ function RoleBadge({ admin, size = "sm" }: { admin: boolean; size?: "sm" | "md" 
         size === "sm" ? "px-1.5 py-px text-xs" : "px-2 py-0.5 text-sm",
       )}
     >
-      {admin ? "Admin" : "Student"}
+      {admin ? t.profile.admin : t.profile.student}
     </span>
   );
 }
@@ -39,13 +41,14 @@ const Placeholder = ({ loading }: { loading: boolean }) =>
   );
 
 export function ProfileMenu() {
+  const t = useT();
   const session = useSession();
   const { data: me, isPending } = useMe();
   const isAdmin = useIsAdmin();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const username = me?.username ?? session?.username ?? "Guest";
+  const username = me?.username ?? session?.username ?? t.profile.guest;
   const fullName = [me?.first_name, me?.last_name].filter(Boolean).join(" ");
   const displayName = fullName || username;
   const field = (text: string | undefined) => text || <Placeholder loading={isPending} />;
@@ -58,7 +61,7 @@ export function ProfileMenu() {
 
   return (
     <Dropdown
-      label={`Profile of ${displayName}`}
+      label={t.profile.of(displayName)}
       buttonClassName="group flex items-center gap-3 rounded-full py-1 pr-3 pl-1 text-left transition-colors hover:bg-panel aria-expanded:bg-panel"
       panelClassName="w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-[1.75rem] bg-panel text-ink shadow-2xl shadow-ink/15"
       button={
@@ -89,9 +92,9 @@ export function ProfileMenu() {
           </div>
 
           <dl>
-            <Row label="First name">{field(me?.first_name)}</Row>
-            <Row label="Last name">{field(me?.last_name)}</Row>
-            <Row label="Email">
+            <Row label={t.profile.firstName}>{field(me?.first_name)}</Row>
+            <Row label={t.profile.lastName}>{field(me?.last_name)}</Row>
+            <Row label={t.profile.email}>
               {me?.email ? (
                 <a href={`mailto:${me.email}`} className="hover:text-orange" title={me.email}>
                   {me.email}
@@ -100,7 +103,7 @@ export function ProfileMenu() {
                 field(undefined)
               )}
             </Row>
-            <Row label="Role">
+            <Row label={t.profile.role}>
               <RoleBadge admin={isAdmin} size="md" />
             </Row>
           </dl>
@@ -112,7 +115,7 @@ export function ProfileMenu() {
               className="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left font-medium text-orange transition-colors hover:bg-white"
             >
               <LogOut className="size-5" />
-              Sign out
+              {t.nav.signOut}
             </button>
           </div>
         </>
