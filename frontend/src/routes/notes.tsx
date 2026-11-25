@@ -5,7 +5,8 @@ import { useRef } from "react";
 import { Button, ErrorNote } from "@/components/ui/primitives";
 import { NoteForm } from "@/features/notes/note-form";
 import { NotesTable } from "@/features/notes/notes-table";
-import { myNotesQuery, topicsQuery, useDeleteNote } from "@/lib/queries";
+import { useT } from "@/lib/i18n";
+import { categoriesQuery, myNotesQuery, topicsQuery, useDeleteNote } from "@/lib/queries";
 
 const route = getRouteApi("/app/notes");
 
@@ -13,7 +14,9 @@ export type NotesSearch = { q?: string };
 
 export function NotesPage() {
   const { q = "" } = route.useSearch();
+  const t = useT();
   const { data: topics } = useSuspenseQuery(topicsQuery);
+  const { data: categories } = useSuspenseQuery(categoriesQuery);
   const { data: notes } = useSuspenseQuery(myNotesQuery);
   const deleteNote = useDeleteNote();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -31,16 +34,16 @@ export function NotesPage() {
   return (
     <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-[2.75rem] leading-none font-medium tracking-tight">My notes</h1>
+        <h1 className="text-[2.75rem] leading-none font-medium tracking-tight">{t.notes.title}</h1>
         <Button onClick={() => dialogRef.current?.showModal()} disabled={!topics.length}>
           <Plus className="size-5" />
-          New note
+          {t.notes.newNote}
         </Button>
       </div>
 
       {deleteNote.error && <ErrorNote>{deleteNote.error.message}</ErrorNote>}
 
-      <section aria-label="Notes" className="rounded-card bg-panel pt-7 pb-3 animate-rise">
+      <section aria-label={t.notes.list} className="rounded-card bg-panel pt-7 pb-3 animate-rise">
         {visible.length ? (
           <NotesTable
             notes={visible}
@@ -49,7 +52,7 @@ export function NotesPage() {
           />
         ) : (
           <p className="px-7 pb-6 text-lg text-muted">
-            {notes.length ? "Nothing matches your search." : "You haven't written any notes yet."}
+            {notes.length ? t.notes.nothingMatches : t.notes.noneYet}
           </p>
         )}
       </section>
@@ -62,18 +65,22 @@ export function NotesPage() {
       >
         <div className="mb-6 flex items-center justify-between">
           <h2 id="new-note-title" className="text-3xl font-medium tracking-tight">
-            New note
+            {t.notes.newNote}
           </h2>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            aria-label="Close"
+            aria-label={t.notes.close}
             className="grid size-10 cursor-pointer place-items-center rounded-full hover:bg-panel"
           >
             <X className="size-6" />
           </button>
         </div>
-        <NoteForm topics={topics} onCreated={() => dialogRef.current?.close()} />
+        <NoteForm
+          topics={topics}
+          categories={categories}
+          onCreated={() => dialogRef.current?.close()}
+        />
       </dialog>
     </div>
   );

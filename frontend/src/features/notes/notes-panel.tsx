@@ -2,9 +2,10 @@ import clsx from "clsx";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Markdown } from "@/components/markdown/markdown";
+import { timeAgo, useLocale, useT } from "@/lib/i18n";
 import { useDeleteNote } from "@/lib/queries";
-import { pad, timeAgo } from "@/lib/topic";
-import type { Note, Topic } from "@/lib/types";
+import { pad } from "@/lib/topic";
+import type { Note } from "@/lib/types";
 import { DeleteButton } from "./delete-button";
 import { NoteForm } from "./note-form";
 
@@ -25,13 +26,16 @@ function Collapse({ open, id, children }: { open: boolean; id?: string; children
 }
 
 type NotesPanelProps = {
-  topic: Topic;
+  topicId: number;
+  topicTitle: string;
   notes: Note[];
   initialOpen?: number;
   onClose: () => void;
 };
 
-export function NotesPanel({ topic, notes, initialOpen, onClose }: NotesPanelProps) {
+export function NotesPanel({ topicId, topicTitle, notes, initialOpen, onClose }: NotesPanelProps) {
+  const t = useT();
+  const locale = useLocale();
   const [openId, setOpenId] = useState<number | undefined>(initialOpen ?? notes.at(-1)?.id);
   const [composing, setComposing] = useState(false);
   const deleteNote = useDeleteNote();
@@ -42,14 +46,14 @@ export function NotesPanel({ topic, notes, initialOpen, onClose }: NotesPanelPro
       <header className="flex items-center justify-between gap-4 px-8 pt-7 pb-5">
         <div className="min-w-0">
           <h2 id="my-notes" className="text-[1.6rem] font-medium tracking-tight">
-            My notes
+            {t.notes.title}
           </h2>
-          <p className="line-clamp-1 text-muted">{topic.title}</p>
+          <p className="line-clamp-1 text-muted">{topicTitle}</p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Hide notes"
+          aria-label={t.notes.hide}
           className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full ring-[1.5px] ring-ink transition-colors hover:bg-white"
         >
           <X className="size-5" strokeWidth={1.8} />
@@ -77,7 +81,9 @@ export function NotesPanel({ topic, notes, initialOpen, onClose }: NotesPanelPro
                   <span className="flex-1 text-[1.3rem] leading-snug font-medium text-pretty">
                     {pad(index + 1)}. {note.title}
                   </span>
-                  <span className="text-base whitespace-nowrap">{timeAgo(note.updated_at)}</span>
+                  <span className="text-base whitespace-nowrap">
+                    {timeAgo(note.updated_at, locale)}
+                  </span>
                   <span className="grid size-8 shrink-0 place-items-center rounded-full ring-[1.5px] ring-ink">
                     <ChevronDown
                       className={clsx(
@@ -113,7 +119,7 @@ export function NotesPanel({ topic, notes, initialOpen, onClose }: NotesPanelPro
             aria-controls="new-note"
             className="flex w-full cursor-pointer items-center gap-4 px-8 py-5 text-left transition-colors hover:bg-white/50"
           >
-            <span className="flex-1 text-[1.3rem] font-medium text-orange">New note</span>
+            <span className="flex-1 text-[1.3rem] font-medium text-orange">{t.notes.newNote}</span>
             <span className="grid size-8 place-items-center rounded-full bg-orange text-white">
               <Plus
                 className={clsx(
@@ -128,13 +134,10 @@ export function NotesPanel({ topic, notes, initialOpen, onClose }: NotesPanelPro
         <Collapse open={formOpen} id="new-note">
           <div className={clsx("px-8 pb-8", notes.length === 0 && "pt-6")}>
             {notes.length === 0 && (
-              <p className="mb-5 text-lg text-muted">
-                No notes for this topic yet. Write down what you learn as you read.
-              </p>
+              <p className="mb-5 text-lg text-muted">{t.notes.emptyForTopic}</p>
             )}
             <NoteForm
-              topics={[topic]}
-              topicId={topic.id}
+              topicId={topicId}
               surface="white"
               onCreated={(note) => {
                 setComposing(false);

@@ -1,16 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { TopicMark } from "@/features/topics/topic-mark";
-import { plainExcerpt, timeAgo, toneAt } from "@/lib/topic";
-import type { Note, Topic } from "@/lib/types";
+import { timeAgo, useLocale, useT } from "@/lib/i18n";
+import { plainExcerpt, titleOf, toneAt } from "@/lib/topic";
+import type { Note, TopicSummary } from "@/lib/types";
 import { DeleteButton } from "./delete-button";
 
 type NotesTableProps = {
   notes: Note[];
-  topics: Topic[];
+  topics: TopicSummary[];
   onDelete?: (note: Note) => void;
 };
 
 export function NotesTable({ notes, topics, onDelete }: NotesTableProps) {
+  const t = useT();
+  const locale = useLocale();
   const indexById = new Map(topics.map((topic, index) => [topic.id, index]));
 
   return (
@@ -18,17 +21,17 @@ export function NotesTable({ notes, topics, onDelete }: NotesTableProps) {
       <thead className="text-muted">
         <tr>
           <th scope="col" className="px-6 pb-3 font-normal lg:px-7">
-            Note
+            {t.notes.columnNote}
           </th>
           <th scope="col" className="hidden pb-3 font-normal md:table-cell">
-            Topic
+            {t.notes.columnTopic}
           </th>
           <th scope="col" className="px-6 pb-3 text-right font-normal lg:px-7">
-            Updated
+            {t.notes.columnUpdated}
           </th>
           {onDelete && (
             <th scope="col" className="w-0 pr-6 pb-3">
-              <span className="sr-only">Actions</span>
+              <span className="sr-only">{t.notes.columnActions}</span>
             </th>
           )}
         </tr>
@@ -58,11 +61,13 @@ export function NotesTable({ notes, topics, onDelete }: NotesTableProps) {
               <td className="hidden md:table-cell">
                 <span className="flex items-center gap-4 text-xl">
                   {index !== undefined && <TopicMark index={index} tone={toneAt(index)} />}
-                  <span className="line-clamp-1">{topic?.title ?? `Topic #${note.topic_id}`}</span>
+                  <span className="line-clamp-1">
+                    {topic ? titleOf(topic, locale) : t.notes.unknownTopic(note.topic_id)}
+                  </span>
                 </span>
               </td>
               <td className="px-6 text-right text-lg whitespace-nowrap lg:px-7">
-                {timeAgo(note.updated_at)}
+                {timeAgo(note.updated_at, locale)}
               </td>
               {onDelete && (
                 <td className="pr-6">

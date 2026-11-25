@@ -1,11 +1,13 @@
 import clsx from "clsx";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 type DeleteButtonProps = { label: string; onConfirm: () => void; className?: string };
 
 export function DeleteButton({ label, onConfirm, className }: DeleteButtonProps) {
   const [armed, setArmed] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (!armed) return;
@@ -17,7 +19,7 @@ export function DeleteButton({ label, onConfirm, className }: DeleteButtonProps)
     <button
       type="button"
       onClick={() => (armed ? onConfirm() : setArmed(true))}
-      aria-label={armed ? `Confirm deleting ${label}` : `Delete ${label}`}
+      aria-label={armed ? t.notes.confirmDelete(label) : t.notes.delete(label)}
       className={clsx(
         "relative z-10 inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl transition-colors",
         armed
@@ -27,7 +29,7 @@ export function DeleteButton({ label, onConfirm, className }: DeleteButtonProps)
       )}
     >
       <Trash2 className="size-5" />
-      {armed && "Delete?"}
+      {armed && t.notes.deleteShort}
     </button>
   );
 }

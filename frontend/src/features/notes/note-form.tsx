@@ -1,20 +1,32 @@
 import clsx from "clsx";
 import { type SubmitEvent, useState, useTransition } from "react";
 import { Button, ErrorNote, Field, inputClass } from "@/components/ui/primitives";
+import { useLocale, useT } from "@/lib/i18n";
 import { useCreateNote } from "@/lib/queries";
-import type { Note, Topic } from "@/lib/types";
+import { pad, titleOf } from "@/lib/topic";
+import type { Category, Note, TopicSummary } from "@/lib/types";
 
 type NoteFormProps = {
-  topics: Topic[];
+  topics?: TopicSummary[];
+  categories?: Category[];
   topicId?: number;
   surface?: "panel" | "white";
   onCreated?: (note: Note) => void;
 };
 
-export function NoteForm({ topics, topicId, surface = "panel", onCreated }: NoteFormProps) {
+export function NoteForm({
+  topics = [],
+  categories = [],
+  topicId,
+  surface = "panel",
+  onCreated,
+}: NoteFormProps) {
+  const t = useT();
+  const locale = useLocale();
   const createNote = useCreateNote();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const topicsByCategory = Map.groupBy(topics, (topic) => topic.category_id);
 
   const onSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,15 +43,22 @@ export function NoteForm({ topics, topicId, surface = "panel", onCreated }: Note
         form.reset();
         onCreated?.(note);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Something went wrong");
+        setError(cause instanceof Error ? cause.message : t.noteForm.failed);
       }
     });
   };
 
+  const options = (items: TopicSummary[]) =>
+    items.map((topic) => (
+      <option key={topic.id} value={topic.id}>
+        {titleOf(topic, locale)}
+      </option>
+    ));
+
   return (
     <form onSubmit={onSubmit} className="grid gap-4">
       <Field
-        label="Title"
+        label={t.noteForm.title}
         name="title"
         required
         maxLength={200}
@@ -48,7 +67,7 @@ export function NoteForm({ topics, topicId, surface = "panel", onCreated }: Note
       />
       {topicId === undefined && (
         <label className="grid gap-2">
-          <span className="text-sm font-medium text-muted">Topic</span>
+          <span className="text-sm font-medium text-muted">{t.noteForm.topic}</span>
           <select
             name="topic_id"
             required
@@ -56,27 +75,38 @@ export function NoteForm({ topics, topicId, surface = "panel", onCreated }: Note
             className={clsx("h-14", inputClass(surface))}
           >
             <option value="" disabled>
-              Choose a topic
+              {t.noteForm.chooseTopic}
             </option>
-            {topics.map((topic) => (
-              <option key={topic.id} value={topic.id}>
-                {topic.title}
-              </option>
-            ))}
+            {categories.map((category) => {
+              const items = topicsByCategory.get(category.id);
+              return items ? (
+                <optgroup
+                  key={category.id}
+                  label={`${pad(category.position)}. ${titleOf(category, locale)}`}
+                >
+                  {options(items)}
+                </optgroup>
+              ) : null;
+            })}
+            {options(
+              topics.filter(
+                (topic) => !categories.some((category) => category.id === topic.category_id),
+              ),
+            )}
           </select>
         </label>
       )}
       <label className="grid gap-2">
         <span className="flex justify-between text-sm font-medium text-muted">
-          Note
-          <span className="font-normal">Markdown supported</span>
+          {t.noteForm.note}
+          <span className="font-normal">{t.noteForm.markdown}</span>
         </span>
         <textarea
           name="content"
           required
           rows={5}
           spellCheck
-          placeholder="What did you learn? Paste a snippet to remember it."
+          placeholder={t.noteForm.placeholder}
           className={clsx(
             "field-sizing-content min-h-36 resize-y py-4 font-[inherit]",
             inputClass(surface),
@@ -85,7 +115,7 @@ export function NoteForm({ topics, topicId, surface = "panel", onCreated }: Note
       </label>
       {error && <ErrorNote>{error}</ErrorNote>}
       <Button type="submit" disabled={pending} className="justify-self-start">
-        {pending ? "Saving…" : "Save note"}
+        {pending ? t.noteForm.saving : t.noteForm.save}
       </Button>
     </form>
   );
