@@ -3,7 +3,7 @@ import models
 from models import Topics
 from database import engine, SessionLocal
 from typing import Annotated
-from routes import topics, notes, auth
+from routes import categories, topics, notes, auth
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -17,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+app.include_router(categories.router)
 app.include_router(topics.router)
 app.include_router(notes.router)
 app.include_router(auth.router)
