@@ -1,17 +1,18 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 import { TopicEditor } from "@/features/topics/topic-editor";
-import { topicsQuery } from "@/lib/queries";
+import { categoriesQuery, topicQuery } from "@/lib/queries";
 
 const editRoute = getRouteApi("/app/topics/$topicId/edit");
 
 export function NewTopicPage() {
-  return <TopicEditor />;
+  const { data: categories } = useSuspenseQuery(categoriesQuery);
+  return <TopicEditor categories={categories} />;
 }
 
 export function EditTopicPage() {
   const { topicId } = editRoute.useParams();
-  const { data: topics } = useSuspenseQuery(topicsQuery);
-  const topic = topics.find((item) => String(item.id) === topicId);
-  return <TopicEditor key={topicId} topic={topic} />;
+  const { data: topic } = useSuspenseQuery(topicQuery(Number(topicId)));
+  const { data: categories } = useSuspenseQuery(categoriesQuery);
+  return <TopicEditor key={topicId} topic={topic} categories={categories} />;
 }
